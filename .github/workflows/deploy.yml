@@ -1,0 +1,41 @@
+name: Build Container and Deploy to Azure
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Log into GitHub's Free Container Registry (GHCR)
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: "vishal1232123"
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Build your Dockerfile and push the image to GHCR
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./dockerfile
+          push: true
+          tags: ghcr.io/vishal1232123/cloud-devops-project:latest
+
+      # Sync with Azure so your Web App pulls the fresh container
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'app-cloud-devops-free'
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
